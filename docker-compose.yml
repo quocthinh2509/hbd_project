@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: birthday-card-app
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=postgresql://birthday_user:birthday_pass@postgres:5432/birthday_card
+      - API_KEY_SECRET=${API_KEY_SECRET}
+      - PUPPETEER_CONCURRENCY=${PUPPETEER_CONCURRENCY:-3}
+      - PUPPETEER_TIMEOUT_MS=${PUPPETEER_TIMEOUT_MS:-30000}
+      - AVATAR_ALLOWED_DOMAINS=${AVATAR_ALLOWED_DOMAINS:-hrm.fpt.vn,storage.fpt.vn}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-30}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src:ro
+    networks:
+      - birthday-net
+    cap_add:
+      - SYS_ADMIN  # required for Puppeteer in Docker
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: birthday-card-postgres
+    environment:
+      POSTGRES_USER: birthday_user
+      POSTGRES_PASSWORD: birthday_pass
+      POSTGRES_DB: birthday_card
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/models/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U birthday_user -d birthday_card"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - birthday-net
+
+networks:
+  birthday-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
