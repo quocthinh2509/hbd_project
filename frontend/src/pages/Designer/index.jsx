@@ -249,6 +249,27 @@ export default function DesignerPage() {
     return () => document.removeEventListener('click', handleGlobalLinkClick, { capture: true });
   }, [isDirty]);
 
+  // Xoá phần tử bằng phím Delete / Backspace
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const active = document.activeElement;
+        if (active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
+          return; // Không xoá khi đang gõ chữ trong thanh thuộc tính
+        }
+        if (selectedId) {
+          setCanvasJson(prev => ({
+            ...prev,
+            elements: prev.elements.filter(el => el.id !== selectedId),
+          }));
+          setSelectedId(null);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, setCanvasJson]);
+
   // Load existing template
   useEffect(() => {
     if (!id) return;
