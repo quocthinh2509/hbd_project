@@ -129,6 +129,26 @@ function renderElement(el, data, avatarBase64Map) {
     return `<div style="${containerStyle}"><img src="${imgSrc}" style="${imgStyle}" alt="avatar" /></div>`;
   }
 
+  // ── Image element (Standalone) ──────────────────────────────────
+  if (el.type === 'image') {
+    const w = el.width || 150;
+    const h = el.height || 150;
+    const filter = el.filter ? `filter: ${el.filter};` : '';
+
+    const containerStyle = [
+      baseStyle,
+      `width:${w}px; height:${h}px;`,
+      el.borderRadius ? `border-radius:${el.borderRadius}px;` : '',
+      `overflow:hidden;`,
+      filter
+    ].join(' ');
+
+    const imgStyle = `width:100%; height:100%; object-fit:${el.objectFit || 'cover'}; display:block;`;
+    const imgSrc = el.url || 'https://placehold.co/300x300';
+
+    return `<div style="${containerStyle}"><img src="${imgSrc}" style="${imgStyle}" alt="image" /></div>`;
+  }
+
   // ── Shape: rect ─────────────────────────────────────────────────
   if (el.type === 'rect') {
     const style = [

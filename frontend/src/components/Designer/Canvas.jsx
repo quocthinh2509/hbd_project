@@ -9,6 +9,7 @@ const ELEMENT_DEFAULTS = {
   position: { text: '{{position}}', font: 'Inter', size: 14, color: '#90caf9', weight: 'normal', style: 'normal', align: 'left', width: 200 },
   logo:     { text: 'FPT Telecom', font: 'Inter', size: 14, color: '#ffffff', weight: '700', style: 'normal', align: 'center', width: 120 },
   avatar:   { size: 150, shape: 'circle', borderW: 3, borderColor: '#ffffff', borderStyle: 'solid', bg: '#1565c0' },
+  image:    { width: 150, height: 150, url: 'https://placehold.co/300x300/404040/ffffff?text=Image', borderRadius: 0, objectFit: 'cover' },
   rect:     { width: 200, height: 60, color: '#ffffff22', borderRadius: 8 },
   circle:   { size: 60, color: '#ffffff22' },
   line:     { width: 300, thickness: 2, color: '#ffffff44' },
@@ -105,6 +106,22 @@ function CanvasElement({ el, isSelected, onSelect, onDragEnd }) {
   if (el.type === 'rect') {
     return (
       <div onMouseDown={onMouseDown} style={{ ...baseStyle, width: el.width || 200, height: el.height || 60, background: el.color || '#ffffff22', borderRadius: el.borderRadius || 0 }} />
+    );
+  }
+
+  // Image (Standalone)
+  if (el.type === 'image') {
+    return (
+      <div onMouseDown={onMouseDown} style={{
+        ...baseStyle,
+        width: el.width || 150,
+        height: el.height || 150,
+        borderRadius: el.borderRadius || 0,
+        overflow: 'hidden',
+        background: '#ffffff11',
+      }}>
+        <img src={el.url || 'https://placehold.co/300x300'} style={{ width: '100%', height: '100%', objectFit: el.objectFit || 'cover', display: 'block', pointerEvents: 'none' }} alt="elem" />
+      </div>
     );
   }
 

@@ -97,18 +97,28 @@ async function getTemplateById(id) {
 }
 
 /**
- * Find active templates by tag name – returns the most recently updated one
+ * Find active templates by tag names (AND logic)
+ * If passed 'hr,ftel', it finds a template that has BOTH tags.
  */
-async function findActiveTemplateByTag(tagName) {
+async function findActiveTemplateByTag(tagInput) {
+  const tags = Array.isArray(tagInput) 
+    ? tagInput 
+    : String(tagInput).split(',').map(t => t.trim()).filter(Boolean);
+
+  if (tags.length === 0) return null;
+
   const { rows } = await query(
     `SELECT t.*
      FROM templates t
      JOIN template_tags tt ON tt.template_id = t.id
      JOIN tags tg ON tg.id = tt.tag_id
-     WHERE tg.name = $1 AND t.is_active = TRUE
+     WHERE t.is_active = TRUE
+       AND tg.name = ANY($1)
+     GROUP BY t.id
+     HAVING COUNT(DISTINCT tg.name) = $2
      ORDER BY t.updated_at DESC
      LIMIT 1`,
-    [tagName]
+    [tags, tags.length]
   );
   return rows[0] || null;
 }

@@ -10,18 +10,20 @@ const ELEMENT_BUTTONS = [
   { type: 'date',     label: 'Ngày sinh', icon: Calendar,  group: 'Placeholder' },
   { type: 'text',     label: 'Văn bản',   icon: Type,      group: 'Text' },
   { type: 'logo',     label: 'Logo text', icon: Zap,       group: 'Text' },
-  { type: 'avatar',   label: 'Avatar',    icon: Image,     group: 'Hình ảnh' },
+  { type: 'avatar',   label: 'Avatar NV', icon: User,      group: 'Hình ảnh' },
+  { type: 'image',    label: 'Ảnh tự do', icon: Image,     group: 'Hình ảnh' },
   { type: 'rect',     label: 'Hình chữ nhật', icon: Square, group: 'Shape' },
   { type: 'circle',   label: 'Hình tròn', icon: Circle,    group: 'Shape' },
   { type: 'line',     label: 'Đường kẻ',  icon: Minus,     group: 'Shape' },
 ];
 
 const GRADIENT_PRESETS = [
-  { label: 'FPT Blue',   value: 'linear-gradient(135deg, #0a3d7a, #1565c0)' },
   { label: 'FPT Navy',   value: 'linear-gradient(135deg, #0d1b3e, #185FA5)' },
-  { label: 'Sunset',     value: 'linear-gradient(135deg, #c0392b, #e74c3c, #f39c12)' },
-  { label: 'Emerald',    value: 'linear-gradient(135deg, #1a472a, #27ae60)' },
-  { label: 'Purple',     value: 'linear-gradient(135deg, #2c003e, #7b2ff7)' },
+  { label: 'Sunset',     value: 'linear-gradient(135deg, #ff7e5f, #feb47b)' },
+  { label: 'Ocean',      value: 'linear-gradient(135deg, #0cebeb, #20e3b2, #29ffc6)' },
+  { label: 'Lavender',   value: 'linear-gradient(135deg, #8360c3, #2ebf91)' },
+  { label: 'Pinky',      value: 'linear-gradient(135deg, #DD5E89, #F7BB97)' },
+  { label: 'Cosmos',     value: 'linear-gradient(135deg, #5b247a, #1bcedf)' },
   { label: 'Gold',       value: 'linear-gradient(135deg, #7d5a00, #f0c040)' },
   { label: 'Dark',       value: 'linear-gradient(135deg, #0f1117, #1a1d27)' },
 ];
@@ -296,6 +298,31 @@ export default function Sidebar({ canvasJson, setCanvasJson, selectedId, setSele
                     </Row>
                     <Row label="Nền">
                       <input type="color" value={selectedEl.bg || '#1565c0'} onChange={e => updateElement({ bg: e.target.value })} style={{ width: 36, height: 30, border: 'none', cursor: 'pointer', background: 'none' }} />
+                    </Row>
+                  </Section>
+                )}
+
+                {/* Image props */}
+                {selectedEl.type === 'image' && (
+                  <Section title="Hình ảnh tĩnh">
+                    <Row label="Image URL">
+                      <input type="text" value={selectedEl.url || ''} onChange={e => updateElement({ url: e.target.value })} style={input()} placeholder="https://..." />
+                    </Row>
+                    <Row label="Rộng (px)">
+                      <input type="number" value={selectedEl.width || 150} onChange={e => updateElement({ width: +e.target.value })} style={input()} />
+                    </Row>
+                    <Row label="Cao (px)">
+                      <input type="number" value={selectedEl.height || 150} onChange={e => updateElement({ height: +e.target.value })} style={input()} />
+                    </Row>
+                    <Row label="Bo góc">
+                      <input type="number" value={selectedEl.borderRadius || 0} onChange={e => updateElement({ borderRadius: +e.target.value })} style={input()} />
+                    </Row>
+                    <Row label="Hiển thị">
+                      <select value={selectedEl.objectFit || 'cover'} onChange={e => updateElement({ objectFit: e.target.value })} style={input()}>
+                        <option value="cover">Cắt vừa khung (Cover)</option>
+                        <option value="contain">Co giãn vừa khung (Contain)</option>
+                        <option value="fill">Kéo giãn (Fill)</option>
+                      </select>
                     </Row>
                   </Section>
                 )}
