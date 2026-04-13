@@ -37,7 +37,7 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, show
   };
 
   return (
-    <div onClick={() => setSelectedId(null)} style={{
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) setSelectedId(null); }} style={{
       position: 'relative',
       width: card.width || 800,
       height: card.height || 450,
@@ -51,7 +51,7 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, show
       {showGrid && (
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
-          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.15) 1px, transparent 1px)',
           backgroundSize: '20px 20px'
         }} />
       )}
@@ -68,11 +68,19 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, show
         };
 
         const onMouseDown = (e) => {
-          if (e.button !== 0) return; // Chỉ bắt chuột trái (Khắc phục lỗi Menu chuột phải)
+          if (e.button !== 0) return; // Chỉ bắt chuột trái
           e.stopPropagation();
           setSelectedId(el.id);
           const sx = e.clientX - el.x, sy = e.clientY - el.y;
-          const mv = (ev) => updateProp(el.id, { x: Math.round(ev.clientX - sx), y: Math.round(ev.clientY - sy) });
+          const mv = (ev) => {
+            let newX = ev.clientX - sx;
+            let newY = ev.clientY - sy;
+            if (showGrid) {
+              newX = Math.round(newX / 20) * 20;
+              newY = Math.round(newY / 20) * 20;
+            }
+            updateProp(el.id, { x: Math.round(newX), y: Math.round(newY) });
+          };
           const up = () => { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); };
           window.addEventListener('mousemove', mv);
           window.addEventListener('mouseup', up);
@@ -94,11 +102,19 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, show
                 const onMove = (ev) => {
                   const dx = ev.clientX - startX;
                   const dy = ev.clientY - startY;
+                  let targetW = startW + dx;
+                  let targetH = startH + dy;
+
+                  if (showGrid) {
+                    targetW = Math.round(targetW / 20) * 20;
+                    targetH = Math.round(targetH / 20) * 20;
+                  }
+
                   if (el.type === 'avatar' || el.type === 'circle') {
-                    const newSize = Math.max(20, Math.round(startW + dx));
+                    const newSize = Math.max(20, Math.round(targetW));
                     updateProp(el.id, { size: newSize });
                   } else {
-                    updateProp(el.id, { width: Math.max(20, Math.round(startW + dx)), height: Math.max(20, Math.round(startH + dy)) });
+                    updateProp(el.id, { width: Math.max(20, Math.round(targetW)), height: Math.max(20, Math.round(targetH)) });
                   }
                 };
                 const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
