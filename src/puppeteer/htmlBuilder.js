@@ -75,10 +75,24 @@ function renderElement(el, data, avatarBase64Map) {
   const TEXT_TYPES = ['text', 'name', 'wish', 'dept', 'date', 'position', 'logo'];
   if (TEXT_TYPES.includes(el.type)) {
     const textContent = escapeHtml(replacePlaceholders(el.text || '', data));
+    
+    // Map system fonts to web fonts that support Vietnamese
+    const fontName = el.font || 'Georgia';
+    const fontMap = {
+      'Georgia': '"Georgia", "Lora", serif',
+      'Times New Roman': '"Times New Roman", "Lora", serif',
+      'Arial': '"Arial", "Roboto", sans-serif',
+      'Verdana': '"Verdana", "Inter", sans-serif',
+      'Courier New': '"Courier New", monospace',
+      'Inter': '"Inter", sans-serif',
+      'Roboto': '"Roboto", sans-serif'
+    };
+    const finalFont = fontMap[fontName] || `"${fontName}", sans-serif`;
+
     const style = [
       baseStyle,
       `width:${el.width || 300}px;`,
-      `font-family:${el.font || 'Georgia'}, serif;`,
+      `font-family:${finalFont};`,
       `font-size:${el.size || 16}px;`,
       `color:${el.color || '#ffffff'};`,
       `font-weight:${el.weight || 'normal'};`,
@@ -181,7 +195,7 @@ function buildHtml(canvasJson, data, avatarBase64) {
       overflow: hidden;
       background: transparent;
     }
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Georgia&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
   </style>
 </head>
 <body>

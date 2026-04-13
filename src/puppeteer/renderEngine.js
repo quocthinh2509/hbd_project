@@ -39,6 +39,7 @@ async function initRenderEngine() {
     });
 
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 15000 });
+    await page.evaluateHandle('document.fonts.ready');
 
     const buffer = await page.screenshot({
       type: 'png',
