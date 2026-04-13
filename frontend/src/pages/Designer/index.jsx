@@ -221,7 +221,7 @@ export default function DesignerPage() {
   // Tính trạng thái chưa lưu (isDirty)
   const isDirty = JSON.stringify(canvasJson) !== originalJsonStr;
 
-  // Cảnh báo người dùng khi reload trang nếu chưa lưu
+  // Cảnh báo người dùng khi reload trang hoặc tắt tab
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isDirty) {
@@ -231,6 +231,22 @@ export default function DesignerPage() {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  // Ngăn chặn bấm chuyển hướng bằng chuột vào các Link nội bộ ở Sidebar
+  useEffect(() => {
+    const handleGlobalLinkClick = (e) => {
+      const link = e.target.closest('a');
+      if (link && isDirty) {
+        if (!window.confirm("Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn thoát khỏi màn hình này?")) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    };
+    // Sử dụng capture: true để chặn sớm nhất sự kiện click trước khi React Router nhận được
+    document.addEventListener('click', handleGlobalLinkClick, { capture: true });
+    return () => document.removeEventListener('click', handleGlobalLinkClick, { capture: true });
   }, [isDirty]);
 
   // Load existing template
