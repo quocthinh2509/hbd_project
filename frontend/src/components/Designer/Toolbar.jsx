@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { Save, Eye, Copy, Download, ArrowLeft, Loader } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Save, Eye, Copy, Download, ArrowLeft, Loader, Grid } from 'lucide-react';
 
-export default function Toolbar({ canvasJson, templateId, onSave, onPreview, onDuplicate, onExportJson, isLoading }) {
-  const navigate = useNavigate();
+export default function Toolbar({ canvasJson, templateId, onSave, onPreview, onDuplicate, onExportJson, isLoading, onBack, showGrid, onToggleGrid }) {
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
 
@@ -26,7 +24,7 @@ export default function Toolbar({ canvasJson, templateId, onSave, onPreview, onD
       flexShrink: 0,
     }}>
       {/* Back */}
-      <button onClick={() => navigate('/templates')} style={ghostBtn()}>
+      <button onClick={onBack} style={ghostBtn()}>
         <ArrowLeft size={14} /> Templates
       </button>
 
@@ -40,6 +38,10 @@ export default function Toolbar({ canvasJson, templateId, onSave, onPreview, onD
       )}
 
       {/* Actions */}
+      <button onClick={onToggleGrid} style={{ ...ghostBtn(), background: showGrid ? 'var(--color-surface-2)' : 'transparent', color: showGrid ? 'var(--color-accent)' : 'var(--color-text)' }}>
+        <Grid size={14} /> Lưới (Grid)
+      </button>
+
       <button onClick={handlePreview} disabled={previewing} style={ghostBtn()}>
         {previewing ? <Loader size={14} className="spin" /> : <Eye size={14} />}
         Xem trước

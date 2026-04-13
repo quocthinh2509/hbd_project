@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/Designer/Sidebar';
 import Toolbar from '../../components/Designer/Toolbar';
@@ -15,14 +15,14 @@ const DEFAULT_CANVAS = {
 };
 
 // ── Inline Canvas Renderer ──────────────────────────────────────
-function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson }) {
+function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, showGrid }) {
   const card = canvasJson.card || {};
   const elements = canvasJson.elements || [];
 
-  const onDragEnd = (id, x, y) =>
+  const updateProp = (id, props) =>
     setCanvasJson(prev => ({
       ...prev,
-      elements: prev.elements.map(el => el.id === id ? { ...el, x: Math.round(x), y: Math.round(y) } : el),
+      elements: prev.elements.map(el => el.id === id ? { ...el, ...props } : el),
     }));
 
   const getShape = (el) => {
@@ -47,6 +47,15 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson }) {
       boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       flexShrink: 0,
     }}>
+      {/* Lớp hiển thị Lưới (Grid) */}
+      {showGrid && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)',
+          backgroundSize: '20px 20px'
+        }} />
+      )}
+
       {elements.map(el => {
         const isSelected = selectedId === el.id;
         const opacity = (el.opacity ?? 100) / 100;
@@ -55,18 +64,57 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson }) {
           cursor: 'move',
           outline: isSelected ? '2px solid #2d8ef5' : '2px solid transparent',
           outlineOffset: 2, userSelect: 'none',
+          zIndex: isSelected ? 10 : 2,
         };
 
         const onMouseDown = (e) => {
+          if (e.button !== 0) return; // Chỉ bắt chuột trái (Khắc phục lỗi Menu chuột phải)
           e.stopPropagation();
           setSelectedId(el.id);
           const sx = e.clientX - el.x, sy = e.clientY - el.y;
-          const mv = (ev) => onDragEnd(el.id, ev.clientX - sx, ev.clientY - sy);
+          const mv = (ev) => updateProp(el.id, { x: Math.round(ev.clientX - sx), y: Math.round(ev.clientY - sy) });
           const up = () => { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); };
           window.addEventListener('mousemove', mv);
           window.addEventListener('mouseup', up);
         };
 
+        // Hàm render Resize Handle
+        const renderResizeHandle = () => {
+          if (!isSelected) return null;
+          return (
+            <div
+              onMouseDown={(e) => {
+                if (e.button !== 0) return;
+                e.stopPropagation();
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startW = el.width || (el.type === 'avatar' || el.type === 'circle' ? el.size : 200);
+                const startH = el.height || startW;
+                
+                const onMove = (ev) => {
+                  const dx = ev.clientX - startX;
+                  const dy = ev.clientY - startY;
+                  if (el.type === 'avatar' || el.type === 'circle') {
+                    const newSize = Math.max(20, Math.round(startW + dx));
+                    updateProp(el.id, { size: newSize });
+                  } else {
+                    updateProp(el.id, { width: Math.max(20, Math.round(startW + dx)), height: Math.max(20, Math.round(startH + dy)) });
+                  }
+                };
+                const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+              }}
+              style={{
+                position: 'absolute', right: -6, bottom: -6, width: 12, height: 12,
+                background: '#2d8ef5', border: '2px solid white', borderRadius: '50%',
+                cursor: 'se-resize', zIndex: 20
+              }}
+            />
+          );
+        };
+
+        // 1. Dạng Văn bản
         if (TEXT_TYPES.includes(el.type)) {
           return (
             <div key={el.id} onMouseDown={onMouseDown} style={{
@@ -75,10 +123,14 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson }) {
               fontSize: el.size || 16, color: el.color || '#fff',
               fontWeight: el.weight || 'normal', fontStyle: el.style || 'normal',
               textAlign: el.align || 'left', lineHeight: 1.4, whiteSpace: 'pre-wrap', wordWrap: 'break-word',
-            }}>{el.text}</div>
+            }}>
+              {el.text}
+              {renderResizeHandle()}
+            </div>
           );
         }
 
+        // 2. Dạng Avatar
         if (el.type === 'avatar') {
           const sz = el.size || 150;
           const { clipPath, borderRadius } = getShape(el);
@@ -93,13 +145,43 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson }) {
               <svg width={sz * 0.4} height={sz * 0.4} viewBox="0 0 24 24" fill={el.borderColor || '#ffffff66'}>
                 <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
               </svg>
+              {renderResizeHandle()}
             </div>
           );
         }
 
-        if (el.type === 'rect') return <div key={el.id} onMouseDown={onMouseDown} style={{ ...base, width: el.width || 200, height: el.height || 60, background: el.color || '#ffffff22', borderRadius: el.borderRadius || 0 }} />;
-        if (el.type === 'circle') { const d = el.size || 60; return <div key={el.id} onMouseDown={onMouseDown} style={{ ...base, width: d, height: d, background: el.color || '#ffffff22', borderRadius: '50%' }} />; }
-        if (el.type === 'line') return <div key={el.id} onMouseDown={onMouseDown} style={{ ...base, width: el.width || 300, height: el.thickness || 2, background: el.color || '#ffffff44' }} />;
+        // 3. Hình ảnh tự do (Mới thêm)
+        if (el.type === 'image') {
+          return (
+            <div key={el.id} onMouseDown={onMouseDown} style={{
+              ...base, width: el.width || 150, height: el.height || 150,
+              borderRadius: el.borderRadius || 0, overflow: 'hidden', background: '#ffffff11',
+            }}>
+              <img src={el.url || 'https://placehold.co/300x300/404040/ffffff?text=Image'} 
+                   style={{ width: '100%', height: '100%', objectFit: el.objectFit || 'cover', display: 'block', pointerEvents: 'none' }} alt="elem" />
+              {renderResizeHandle()}
+            </div>
+          );
+        }
+
+        // 4. Các Shapes cơ bản
+        if (el.type === 'rect') return (
+          <div key={el.id} onMouseDown={onMouseDown} style={{ ...base, width: el.width || 200, height: el.height || 60, background: el.color || '#ffffff22', borderRadius: el.borderRadius || 0 }}>
+            {renderResizeHandle()}
+          </div>
+        );
+        if (el.type === 'circle') { 
+          const d = el.size || 60; 
+          return <div key={el.id} onMouseDown={onMouseDown} style={{ ...base, width: d, height: d, background: el.color || '#ffffff22', borderRadius: '50%' }}>
+            {renderResizeHandle()}
+          </div>; 
+        }
+        if (el.type === 'line') return (
+          <div key={el.id} onMouseDown={onMouseDown} style={{ ...base, width: el.width || 300, height: el.thickness || 2, background: el.color || '#ffffff44' }}>
+            {renderResizeHandle()}
+          </div>
+        );
+        
         return null;
       })}
     </div>
@@ -110,18 +192,39 @@ export default function DesignerPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [canvasJson, setCanvasJson] = useState(DEFAULT_CANVAS);
+  const [originalJsonStr, setOriginalJsonStr] = useState(JSON.stringify(DEFAULT_CANVAS));
   const [selectedId, setSelectedId] = useState(null);
+  
   const [showSave, setShowSave] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  
   const [templateMeta, setTemplateMeta] = useState({ name: '', description: '', tags: [] });
   const [loading, setLoading] = useState(!!id);
+
+  // Tính trạng thái chưa lưu (isDirty)
+  const isDirty = JSON.stringify(canvasJson) !== originalJsonStr;
+
+  // Cảnh báo người dùng khi reload trang nếu chưa lưu
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = ''; // Required for some browsers
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   // Load existing template
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     templateApi.get(id).then(({ data }) => {
-      setCanvasJson(typeof data.canvas_json === 'string' ? JSON.parse(data.canvas_json) : data.canvas_json);
+      const parsedJson = typeof data.canvas_json === 'string' ? JSON.parse(data.canvas_json) : data.canvas_json;
+      setCanvasJson(parsedJson);
+      setOriginalJsonStr(JSON.stringify(parsedJson));
       setTemplateMeta({ name: data.name, description: data.description || '', tags: data.tags || [] });
     }).catch(() => navigate('/templates')).finally(() => setLoading(false));
   }, [id]);
@@ -136,12 +239,16 @@ export default function DesignerPage() {
 
   const handleSave = async ({ name, description, tag_ids }) => {
     const payload = { name, description, canvas_json: canvasJson, tag_ids };
+    let newId = id;
     if (id) {
       await templateApi.update(id, payload);
     } else {
       const { data } = await templateApi.create(payload);
-      navigate(`/templates/${data.id}/edit`, { replace: true });
+      newId = data.id;
     }
+    setOriginalJsonStr(JSON.stringify(canvasJson));
+    if (!id) navigate(`/templates/${newId}/edit`, { replace: true });
+    setShowSave(false);
   };
 
   const handleDuplicate = async () => {
@@ -156,6 +263,13 @@ export default function DesignerPage() {
     a.download = `canvas_${Date.now()}.json`; a.click();
   };
 
+  const handleNavBack = () => {
+    if (isDirty) {
+      if (!window.confirm("Bạn có thay đổi chưa lưu. Bạn có chắc muốn thoát không?")) return;
+    }
+    navigate('/templates');
+  };
+
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--color-text-muted)' }}>Loading...</div>;
 
   return (
@@ -168,6 +282,9 @@ export default function DesignerPage() {
         onPreview={() => setShowPreview(true)}
         onDuplicate={handleDuplicate}
         onExportJson={handleExportJson}
+        onBack={handleNavBack}
+        showGrid={showGrid}
+        onToggleGrid={() => setShowGrid(!showGrid)}
       />
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
@@ -192,6 +309,7 @@ export default function DesignerPage() {
             selectedId={selectedId}
             setSelectedId={setSelectedId}
             setCanvasJson={setCanvasJson}
+            showGrid={showGrid}
           />
         </div>
       </div>
