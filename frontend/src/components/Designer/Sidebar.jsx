@@ -156,6 +156,43 @@ export default function Sidebar({ canvasJson, setCanvasJson, selectedId, setSele
                   >{p.label}</button>
                 ))}
               </div>
+
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--color-border)' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Tự phối màu</div>
+                
+                <Row label="Màu đơn">
+                  <input 
+                    type="color" 
+                    onChange={e => updateCard({ background: e.target.value })} 
+                    style={{ width: '100%', height: 30, border: 'none', cursor: 'pointer', background: 'none' }} 
+                  />
+                </Row>
+                
+                <Row label="Kết hợp">
+                  <div style={{ display: 'flex', gap: 6, width: '100%' }}>
+                    <input 
+                      type="color" 
+                      id="cg1"
+                      defaultValue="#9b59b6" 
+                      style={{ flex: 1, height: 30, border: 'none', cursor: 'pointer', background: 'none' }} 
+                      onChange={e => {
+                        const c2 = document.getElementById('cg2').value;
+                        updateCard({ background: `linear-gradient(135deg, ${e.target.value}, ${c2})` });
+                      }}
+                    />
+                    <input 
+                      type="color" 
+                      id="cg2"
+                      defaultValue="#3498db" 
+                      style={{ flex: 1, height: 30, border: 'none', cursor: 'pointer', background: 'none' }} 
+                      onChange={e => {
+                        const c1 = document.getElementById('cg1').value;
+                        updateCard({ background: `linear-gradient(135deg, ${c1}, ${e.target.value})` });
+                      }}
+                    />
+                  </div>
+                </Row>
+              </div>
             </Section>
           </>
         )}
