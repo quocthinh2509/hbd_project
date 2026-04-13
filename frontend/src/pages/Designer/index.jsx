@@ -15,7 +15,7 @@ const DEFAULT_CANVAS = {
 };
 
 // ── Inline Canvas Renderer ──────────────────────────────────────
-function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, showGrid }) {
+function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, gridSize }) {
   const card = canvasJson.card || {};
   const elements = canvasJson.elements || [];
 
@@ -47,12 +47,13 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, show
       boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       flexShrink: 0,
     }}>
-      {/* Lớp hiển thị Lưới (Grid) */}
-      {showGrid && (
+      {/* Lớp hiển thị Lưới hạt (Dot Grid - n8n style) */}
+      {gridSize > 0 && (
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
-          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.15) 1px, transparent 1px)',
-          backgroundSize: '20px 20px'
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 1.5px, transparent 1.5px)',
+          backgroundSize: `${gridSize}px ${gridSize}px`,
+          backgroundPosition: '0 0'
         }} />
       )}
 
@@ -75,9 +76,9 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, show
           const mv = (ev) => {
             let newX = ev.clientX - sx;
             let newY = ev.clientY - sy;
-            if (showGrid) {
-              newX = Math.round(newX / 20) * 20;
-              newY = Math.round(newY / 20) * 20;
+            if (gridSize > 0) {
+              newX = Math.round(newX / gridSize) * gridSize;
+              newY = Math.round(newY / gridSize) * gridSize;
             }
             updateProp(el.id, { x: Math.round(newX), y: Math.round(newY) });
           };
@@ -105,9 +106,9 @@ function LiveCanvas({ canvasJson, selectedId, setSelectedId, setCanvasJson, show
                   let targetW = startW + dx;
                   let targetH = startH + dy;
 
-                  if (showGrid) {
-                    targetW = Math.round(targetW / 20) * 20;
-                    targetH = Math.round(targetH / 20) * 20;
+                  if (gridSize > 0) {
+                    targetW = Math.round(targetW / gridSize) * gridSize;
+                    targetH = Math.round(targetH / gridSize) * gridSize;
                   }
 
                   if (el.type === 'avatar' || el.type === 'circle') {
@@ -213,7 +214,7 @@ export default function DesignerPage() {
   
   const [showSave, setShowSave] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [showGrid, setShowGrid] = useState(false);
+  const [gridSize, setGridSize] = useState(0);
   
   const [templateMeta, setTemplateMeta] = useState({ name: '', description: '', tags: [] });
   const [loading, setLoading] = useState(!!id);
@@ -336,8 +337,8 @@ export default function DesignerPage() {
         onDuplicate={handleDuplicate}
         onExportJson={handleExportJson}
         onBack={handleNavBack}
-        showGrid={showGrid}
-        onToggleGrid={() => setShowGrid(!showGrid)}
+        gridSize={gridSize}
+        onGridSizeChange={setGridSize}
       />
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
@@ -362,7 +363,7 @@ export default function DesignerPage() {
             selectedId={selectedId}
             setSelectedId={setSelectedId}
             setCanvasJson={setCanvasJson}
-            showGrid={showGrid}
+            gridSize={gridSize}
           />
         </div>
       </div>

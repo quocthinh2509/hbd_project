@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Save, Eye, Copy, Download, ArrowLeft, Loader, Grid } from 'lucide-react';
 
-export default function Toolbar({ canvasJson, templateId, onSave, onPreview, onDuplicate, onExportJson, isLoading, onBack, showGrid, onToggleGrid }) {
+export default function Toolbar({ canvasJson, templateId, onSave, onPreview, onDuplicate, onExportJson, isLoading, onBack, gridSize, onGridSizeChange }) {
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
 
@@ -38,9 +38,20 @@ export default function Toolbar({ canvasJson, templateId, onSave, onPreview, onD
       )}
 
       {/* Actions */}
-      <button onClick={onToggleGrid} style={{ ...ghostBtn(), background: showGrid ? 'var(--color-surface-2)' : 'transparent', color: showGrid ? 'var(--color-accent)' : 'var(--color-text)' }}>
-        <Grid size={14} /> Lưới (Grid)
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: gridSize > 0 ? 'var(--color-surface-2)' : 'transparent', borderRadius: 7, padding: '0 4px', border: '1px solid var(--color-border)' }}>
+        <Grid size={14} color={gridSize > 0 ? 'var(--color-accent)' : 'var(--color-text)'} style={{ marginLeft: 8 }} />
+        <select 
+          value={gridSize} 
+          onChange={e => onGridSizeChange(Number(e.target.value))}
+          style={{ background: 'transparent', border: 'none', color: gridSize > 0 ? 'var(--color-accent)' : 'var(--color-text)', fontSize: 12, fontWeight: 500, padding: '6px 8px', cursor: 'pointer', outline: 'none' }}
+        >
+          <option value={0} style={{color:'black'}}>Tắt Lưới</option>
+          <option value={10} style={{color:'black'}}>Hạt 10px</option>
+          <option value={20} style={{color:'black'}}>Hạt 20px</option>
+          <option value={30} style={{color:'black'}}>Hạt 30px</option>
+          <option value={40} style={{color:'black'}}>Hạt 40px</option>
+        </select>
+      </div>
 
       <button onClick={handlePreview} disabled={previewing} style={ghostBtn()}>
         {previewing ? <Loader size={14} className="spin" /> : <Eye size={14} />}
